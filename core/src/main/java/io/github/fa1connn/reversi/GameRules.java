@@ -2,99 +2,83 @@ package io.github.fa1connn.reversi;
 
 public class GameRules {
 
-    // 8 Yönü Temsil Eden Dizi: {Satır Değişimi, Sütun Değişimi}
-    // Örnek: {-1, 0} Yukarı, {1, 1} Sağ Alt Çapraz
+    //Row and column
     private static final int[][] DIRECTIONS = {
-        {-1, 0}, {1, 0}, {0, -1}, {0, 1},   // Dikey ve Yatay
-        {-1, -1}, {-1, 1}, {1, -1}, {1, 1}  // Çaprazlar
+        {-1, 0}, {1, 0}, {0, -1}, {0, 1},
+        {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
     };
 
-    /**
-     * Bir hamlenin geçerli olup olmadığını kontrol eder.
-     * @param board Oyun tahtası
-     * @param player Hamleyi yapan oyuncu (Siyah veya Beyaz)
-     * @param row Satır
-     * @param col Sütun
-     * @return Geçerli ise true, değilse false
-     */
+    //Board = game board, player = Black or White
     public static boolean isValidMove(Board board, CellState player, int row, int col) {
-        // 1. Kural: Hücre zaten doluysa oraya taş konamaz.
+        //Check if it is not EMPTY
         if (board.getCell(row, col) != CellState.EMPTY) {
             return false;
         }
 
-        // 2. Kural: En az bir yönde rakip taşları kıstırıyor mu?
+        //Has taken at least one token of the opposite color between tokens of its own color
         for (int[] dir : DIRECTIONS) {
             if (canCaptureInDirection(board, player, row, col, dir[0], dir[1])) {
-                return true; // Tek bir yön bile tutsa yeterli
+                return true; //One is enough
             }
         }
-
         return false;
     }
 
-    /**
-     * Belirtilen yönde taş kıstırma mümkün mü diye bakar.
-     */
+    //Is it possible to take in between
     private static boolean canCaptureInDirection(Board board, CellState player, int startRow, int startCol, int dRow, int dCol) {
         CellState opponent = player.getOpponent();
         int r = startRow + dRow;
         int c = startCol + dCol;
         boolean foundOpponent = false;
 
-        // Tahta sınırları içinde kaldığımız sürece ilerle
+        //Bound is our board
         while (board.isInsideBoard(r, c)) {
             CellState current = board.getCell(r, c);
 
             if (current == opponent) {
-                // Rakip taşı bulduk, ilerlemeye devam et
+                //Opponent token different from player's token
                 foundOpponent = true;
-            } else if (current == player) {
-                // Kendi taşımızı bulduk!
-                // Eğer arada rakip taşlar varsa (foundOpponent == true), bu geçerli bir kıstırmadır.
+            }
+            else if (current == player) {
+                //Same token as player
                 return foundOpponent;
-            } else {
-                // Boş kareye geldik, kıstırma başarısız.
+            }
+            else {
+                //EMPTY cell
                 return false;
             }
 
-            // Bir adım daha ileri git
+            //One more step
             r += dRow;
             c += dCol;
         }
-
-        return false; // Tahta dışına çıktık
+        //Out of bounds
+        return false;
     }
 
-    /**
-     * Hamleyi gerçekleştirir: Taşı koyar ve aradaki rakip taşları çevirir.
-     * Not: Bu metodu çağırmadan önce isValidMove ile kontrol yapılmış olmalıdır.
-     */
+    //Puts the token and change colors which are taken in between
     public static void makeMove(Board board, CellState player, int row, int col) {
-        // 1. Taşı koy
         board.setCell(row, col, player);
 
-        // 2. 8 Yöne bak ve çevrilecek taşları çevir
+        //8 direction
         for (int[] dir : DIRECTIONS) {
             int dRow = dir[0];
             int dCol = dir[1];
 
-            // Eğer bu yönde kıstırma varsa, taşları çevir
+            //If it is taken in between change
             if (canCaptureInDirection(board, player, row, col, dRow, dCol)) {
                 flipStones(board, player, row, col, dRow, dCol);
             }
         }
     }
 
-    /**
-     * Belirtilen yöndeki rakip taşları bizim rengimize çevirir.
-     */
+    //If it is taken in between change
     private static void flipStones(Board board, CellState player, int r, int c, int dRow, int dCol) {
         CellState opponent = player.getOpponent();
         r += dRow;
         c += dCol;
 
-        // Rakip taşları gördüğümüz sürece ilerle ve onları bizim rengimize yap
+        //Unless unseen opponent's token change the color
         while (board.getCell(r, c) == opponent) {
             board.setCell(r, c, player);
             r += dRow;
@@ -102,10 +86,7 @@ public class GameRules {
         }
     }
 
-    /**
-     * Oyuncunun yapabileceği herhangi bir hamle var mı?
-     * (Pas geçme durumunu kontrol etmek için)
-     */
+    //It checks if there is a valid move or not
     public static boolean hasValidMove(Board board, CellState player) {
         for (int r = 0; r < Board.SIZE; r++) {
             for (int c = 0; c < Board.SIZE; c++) {

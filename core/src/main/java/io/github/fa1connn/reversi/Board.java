@@ -1,68 +1,49 @@
 package io.github.fa1connn.reversi;
 
 public class Board {
-    // Reversi tahtası standart olarak 8x8 boyutundadır.
+    //Standard
     public static final int SIZE = 8;
 
-    // Tahtadaki taşları tutan iki boyutlu dizi (Matris)
+    //An array holding the tokens on the board
     private CellState[][] grid;
 
     public Board() {
-        // Tahtayı bellekte oluştur
         grid = new CellState[SIZE][SIZE];
-        // Oyunu başlangıç pozisyonuna getir
         reset();
     }
 
-    /**
-     * Tahtayı temizler ve başlangıçtaki 4 taşı yerleştirir.
-     */
     public void reset() {
-        // 1. Tüm kareleri boşalt
+        //Clear all cells
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
                 grid[row][col] = CellState.EMPTY;
             }
         }
 
-        // 2. Reversi Başlangıç Kurulumu (Ortadaki 4 taş)
-        // Dizi indisleri 0'dan başlar. O yüzden 4. satır -> index 3 olur.
-
-        // Sol Üst (3,3) -> Beyaz
+        //Initial positions
         grid[3][3] = CellState.WHITE;
-        // Sağ Alt (4,4) -> Beyaz
         grid[4][4] = CellState.WHITE;
-
-        // Sağ Üst (3,4) -> Siyah
         grid[3][4] = CellState.BLACK;
-        // Sol Alt (4,3) -> Siyah
         grid[4][3] = CellState.BLACK;
     }
 
-    /**
-     * Belirtilen satır ve sütundaki taşın durumunu döndürür.
-     */
+    //Condition of token
     public CellState getCell(int row, int col) {
-        // Eğer tahta sınırları dışında bir yer istenirse EMPTY döndür (Hata vermesin)
+        // Instead of giving an error return EMPTY
         if (!isInsideBoard(row, col)) {
             return CellState.EMPTY;
         }
         return grid[row][col];
     }
 
-    /**
-     * Tahtaya taş koymak veya durumunu değiştirmek için kullanılır.
-     */
+    //Putting tokens
     public void setCell(int row, int col, CellState state) {
         if (isInsideBoard(row, col)) {
             grid[row][col] = state;
         }
     }
 
-    /**
-     * Verilen koordinatın tahta sınırları içinde olup olmadığını kontrol eder.
-     * @return Tahta içindeyse true, dışındaysa false.
-     */
+    //Check if it is not inside
     public boolean isInsideBoard(int row, int col) {
         return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
     }

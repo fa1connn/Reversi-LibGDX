@@ -3,7 +3,7 @@ package io.github.fa1connn.reversi;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20; // Yarı saydamlık için gerekli
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -15,25 +15,15 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class GameScreen extends ScreenAdapter {
-    private CellState currentPlayer = CellState.BLACK;
-    private boolean isGameOver = false; // Oyun bitti mi kontrolü
-    private String winnerText = "";     // Kazananı yazmak için
-
-    // --- BOYUT AYARLARI ---
-    private static final float WORLD_WIDTH = 800f;
-    private static final float WORLD_HEIGHT = 800f;
-
-    // Tahta Boyutu
-    private static final float BOARD_SIZE = 640f;
-    private static final float CELL_SIZE = BOARD_SIZE / 8;
-
-    // Tahta Konumu
-    private static final float BOARD_X = 80f;
-    private static final float BOARD_Y = 40f;
-
     private final reversiGame game;
     private Board board;
 
+    //Game status
+    private CellState currentPlayer = CellState.BLACK;
+    private boolean isGameOver = false;
+    private String winnerText = "";
+
+    //Drawing tools
     private OrthographicCamera camera;
     private Viewport viewport;
     private ShapeRenderer shapeRenderer;
@@ -41,9 +31,31 @@ public class GameScreen extends ScreenAdapter {
     private BitmapFont font;
     private GlyphLayout layout;
 
+    //Constants
+    private static final float WORLD_WIDTH = 800f;
+    private static final float WORLD_HEIGHT = 800f;
+
+    //Board settings
+    private static final float BOARD_SIZE = 640f;
+    private static final float CELL_SIZE = BOARD_SIZE / 8;
+    private static final float BOARD_X = 80f;
+    private static final float BOARD_Y = 40f;
+
+    //Button coordinates
+    private static final float EXIT_BTN_WIDTH = 80f;
+    private static final float EXIT_BTN_HEIGHT = 35f;
+    private static final float EXIT_BTN_X = 10f;
+    private static final float EXIT_BTN_Y = WORLD_HEIGHT - EXIT_BTN_HEIGHT - 10f;
+
+    //End-of-game buttons
+    private static final float BTN_WIDTH = 260f;
+    private static final float BTN_HEIGHT = 70f;
+    private static final float PLAY_AGAIN_Y = 400f;
+    private static final float MENU_BTN_Y = 310f;
+
     public GameScreen(reversiGame game) {
         this.game = game;
-        board = new Board();
+        this.board = new Board();
 
         camera = new OrthographicCamera();
         viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
@@ -53,23 +65,19 @@ public class GameScreen extends ScreenAdapter {
         shapeRenderer = new ShapeRenderer();
         batch = new SpriteBatch();
 
-        // --- FONT KALİTESİ ---
+        //Font settings
         font = new BitmapFont();
-        // Fontun kenarlarını yumuşat (Linear Filter)
         font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        font.getData().setScale(1.5f); // Çok büyütürsek bozulur, 1.5 ideal
-
         layout = new GlyphLayout();
     }
 
     @Override
     public void render(float delta) {
-        // Girişleri kontrol et
-        handleInput();
+        handleInput(); //Touch Control
 
-        ScreenUtils.clear(0.92f, 0.85f, 0.72f, 1);
+        ScreenUtils.clear(0.62f, 0.65f, 0.92f, 1); //Background color
 
-        // Yarı saydamlık (transparanlık) için gerekli ayar
+        //Transparency
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
@@ -77,32 +85,30 @@ public class GameScreen extends ScreenAdapter {
         shapeRenderer.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
 
-        // --- 1. ŞEKİL ÇİZİMLERİ (TAHTA VE OYUN) ---
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        // A) Oyun Tahtası Zemin
+        //Board
         shapeRenderer.setColor(new Color(0.35f, 0.20f, 0.10f, 1));
         shapeRenderer.rect(BOARD_X, BOARD_Y, BOARD_SIZE, BOARD_SIZE);
 
-        // B) Çıkış Butonu (Sol En Üst Köşe)
-        // X: 10, Y: 760 (800'e çok yakın)
+        //Exit button
         shapeRenderer.setColor(Color.FIREBRICK);
-        shapeRenderer.rect(10, 760, 80, 35);
+        shapeRenderer.rect(EXIT_BTN_X, EXIT_BTN_Y, EXIT_BTN_WIDTH, EXIT_BTN_HEIGHT);
 
-        // C) Izgara ve Taşlar
+        //Cells and tokens
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
                 float x = BOARD_X + (col * CELL_SIZE);
                 float y = BOARD_Y + (row * CELL_SIZE);
 
-                // Izgaralar
+                //Grid
                 shapeRenderer.setColor(Color.BLACK);
                 shapeRenderer.rectLine(x, y, x + CELL_SIZE, y, 2);
                 shapeRenderer.rectLine(x, y, x, y + CELL_SIZE, 2);
                 shapeRenderer.rectLine(x + CELL_SIZE, y, x + CELL_SIZE, y + CELL_SIZE, 2);
                 shapeRenderer.rectLine(x, y + CELL_SIZE, x + CELL_SIZE, y + CELL_SIZE, 2);
 
-                // Taşlar
+                //Tokens
                 CellState cell = board.getCell(row, col);
                 if (cell != CellState.EMPTY) {
                     float cx = x + CELL_SIZE / 2;
@@ -117,111 +123,111 @@ public class GameScreen extends ScreenAdapter {
             }
         }
 
-        // D) Sıra Göstergesi Pulu (Yazıya değmemesi için konumlandı)
+        //Turn
         if (!isGameOver) {
             if (currentPlayer == CellState.BLACK) shapeRenderer.setColor(Color.BLACK);
             else shapeRenderer.setColor(Color.WHITE);
-            shapeRenderer.circle(230, 735, 15);
+            //Token shape
+            shapeRenderer.circle(270, 765, 13);
         }
 
-        // --- OYUN BİTTİ EKRANI (OVERLAY) ---
+        //End-of-Game screen
         if (isGameOver) {
-            // Yarı saydam siyah arka plan
+            //Semi-transparent
             shapeRenderer.setColor(0, 0, 0, 0.85f);
             shapeRenderer.rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-            // Buton Kutuları
-            // Yeniden Oyna Butonu (Yeşilimsi)
+            //Play again
             shapeRenderer.setColor(Color.FOREST);
-            shapeRenderer.rect(250, 400, 300, 80);
+            float btnX = (WORLD_WIDTH - BTN_WIDTH) / 2;
+            shapeRenderer.rect(btnX, PLAY_AGAIN_Y, BTN_WIDTH, BTN_HEIGHT);
 
-            // Menü Butonu (Mavimsi)
+            //Menu
             shapeRenderer.setColor(Color.ROYAL);
-            shapeRenderer.rect(250, 280, 300, 80);
+            shapeRenderer.rect(btnX, MENU_BTN_Y, BTN_WIDTH, BTN_HEIGHT);
         }
 
         shapeRenderer.end();
 
-        // --- 2. YAZI ÇİZİMLERİ ---
+        //Texts
         batch.begin();
 
-        // Çıkış Yazısı (Sol Üst)
+        //Exit
         font.setColor(Color.WHITE);
-        font.getData().setScale(1.2f); // Çıkış yazısı kibar olsun
-        layout.setText(font, "CIKIS");
-        // Butonun ortasına: 10 + (80 - width)/2
-        font.draw(batch, layout, 10 + (80 - layout.width) / 2, 760 + (35 + layout.height) / 2);
+        font.getData().setScale(1.2f);
+        layout.setText(font, "EXIT");
+        //Center the text
+        font.draw(batch, layout, EXIT_BTN_X + (EXIT_BTN_WIDTH - layout.width) / 2, EXIT_BTN_Y + (EXIT_BTN_HEIGHT + layout.height) / 2);
 
-        // Oyun Arayüzü Yazıları (Eğer oyun bitmediyse göster)
         if (!isGameOver) {
-            font.getData().setScale(1.8f);
+            //Score and turn
+            font.getData().setScale(1.5f);
 
-            // Sıra Bilgisi
+            //Turn
             font.setColor(Color.BLACK);
-            String siraMetni = (currentPlayer == CellState.BLACK) ? "SIRA: SIYAH" : "SIRA: BEYAZ";
-            font.draw(batch, siraMetni, 130, 785); // Biraz daha yukarı aldık
+            String turnText = (currentPlayer == CellState.BLACK) ? "Turn: Black" : "Turn: White";
+            font.draw(batch, turnText, 140, 775);
 
-            // Skorlar
-            String skorSiyah = "SIYAH: " + countStones(CellState.BLACK);
-            String skorBeyaz = "BEYAZ: " + countStones(CellState.WHITE);
-
+            //Score
             font.setColor(Color.BLACK);
-            font.draw(batch, skorSiyah, 500, 790);
-
+            font.draw(batch, "Black: " + countStones(CellState.BLACK), 500, 785);
             font.setColor(Color.DARK_GRAY);
-            font.draw(batch, skorBeyaz, 500, 760);
+            font.draw(batch, "White: " + countStones(CellState.WHITE), 500, 755);
         }
         else {
-            // --- OYUN SONU YAZILARI ---
-            font.getData().setScale(3f);
+
+            //Winner
+            font.getData().setScale(3.0f);
             font.setColor(Color.GOLD);
             layout.setText(font, winnerText);
-            // Ekranın ortasına yaz
             font.draw(batch, layout, (WORLD_WIDTH - layout.width) / 2, 600);
 
-            font.getData().setScale(2f);
+            //Play Again
+            font.getData().setScale(2.0f);
             font.setColor(Color.WHITE);
+            layout.setText(font, "PLAY AGAIN");
+            float btnCenterX = WORLD_WIDTH / 2;
+            font.draw(batch, layout, btnCenterX - layout.width / 2, PLAY_AGAIN_Y + (BTN_HEIGHT + layout.height) / 2);
 
-            // Yeniden Oyna Yazısı
-            layout.setText(font, "YENIDEN OYNA");
-            font.draw(batch, layout, 250 + (300 - layout.width) / 2, 400 + (80 + layout.height) / 2);
-
-            // Menü Yazısı
+            //Menu
             layout.setText(font, "MENU");
-            font.draw(batch, layout, 250 + (300 - layout.width) / 2, 280 + (80 + layout.height) / 2);
+            font.draw(batch, layout, btnCenterX - layout.width / 2, MENU_BTN_Y + (BTN_HEIGHT + layout.height) / 2);
         }
-
         batch.end();
     }
 
     private void handleInput() {
         if (Gdx.input.justTouched()) {
+            //Get coordinate which was taken by touch
             float touchX = Gdx.input.getX();
             float touchY = Gdx.input.getY();
             com.badlogic.gdx.math.Vector3 touchPoint = new com.badlogic.gdx.math.Vector3(touchX, touchY, 0);
             viewport.unproject(touchPoint);
 
-            // --- 1. OYUN BİTTİYSE BUTONLARI DİNLE ---
+            //Game Over
             if (isGameOver) {
-                // Yeniden Oyna Butonu (250, 400) - (550, 480)
-                if (touchPoint.x >= 250 && touchPoint.x <= 550 && touchPoint.y >= 400 && touchPoint.y <= 480) {
-                    resetGame(); // Oyunu sıfırla
+                float btnX = (WORLD_WIDTH - BTN_WIDTH) / 2;
+
+                //Play Again
+                if (touchPoint.x >= btnX && touchPoint.x <= btnX + BTN_WIDTH &&
+                    touchPoint.y >= PLAY_AGAIN_Y && touchPoint.y <= PLAY_AGAIN_Y + BTN_HEIGHT) {
+                    resetGame();
                 }
 
-                // Menü Butonu (250, 280) - (550, 360)
-                if (touchPoint.x >= 250 && touchPoint.x <= 550 && touchPoint.y >= 280 && touchPoint.y <= 360) {
-                    game.setScreen(new MenuScreen(game)); // Menüye dön
+                //Menu
+                if (touchPoint.x >= btnX && touchPoint.x <= btnX + BTN_WIDTH &&
+                    touchPoint.y >= MENU_BTN_Y && touchPoint.y <= MENU_BTN_Y + BTN_HEIGHT) {
+                    game.setScreen(new MenuScreen(game));
                 }
-                return; // Oyun bittiyse aşağıdaki tahta tıklamalarını yapma
+                return;
             }
 
-            // --- 2. ÇIKIŞ BUTONU (Sol Üst) ---
-            // X: 10-90, Y: 760-795
-            if (touchPoint.x >= 10 && touchPoint.x <= 90 && touchPoint.y >= 760 && touchPoint.y <= 795) {
+            if (touchPoint.x >= EXIT_BTN_X && touchPoint.x <= EXIT_BTN_X + EXIT_BTN_WIDTH &&
+                touchPoint.y >= EXIT_BTN_Y && touchPoint.y <= EXIT_BTN_Y + EXIT_BTN_HEIGHT) {
                 Gdx.app.exit();
             }
 
-            // --- 3. TAHTA HAMLESİ ---
+            //Putting tokens
             if (touchPoint.x >= BOARD_X && touchPoint.x < BOARD_X + BOARD_SIZE &&
                 touchPoint.y >= BOARD_Y && touchPoint.y < BOARD_Y + BOARD_SIZE) {
 
@@ -237,25 +243,29 @@ public class GameScreen extends ScreenAdapter {
         }
     }
 
+    //Reset
+    private void resetGame() {
+        board.reset();
+        currentPlayer = CellState.BLACK;
+        isGameOver = false;
+        winnerText = "";
+    }
+
     private void processMove(int row, int col) {
         if (GameRules.isValidMove(board, currentPlayer, row, col)) {
             GameRules.makeMove(board, currentPlayer, row, col);
-
-            // Sırayı rakibe ver
             currentPlayer = currentPlayer.getOpponent();
 
-            // Rakip oynayabiliyor mu?
+            //Does one of them have a move
             if (!GameRules.hasValidMove(board, currentPlayer)) {
-                // Hayırsa, sıra tekrar bana geçer (Pas)
                 currentPlayer = currentPlayer.getOpponent();
-
-                // Ben de oynayamıyorsam -> Oyun Biter
+                //The currentPlayer passes, and it's the opponent's turn
+                //Does the other one have a move
                 if (!GameRules.hasValidMove(board, currentPlayer)) {
                     gameOver();
                 }
             }
-
-            // Eğer tahta dolduysa da oyun biter
+            //Is board full
             if (isBoardFull()) {
                 gameOver();
             }
@@ -267,18 +277,11 @@ public class GameScreen extends ScreenAdapter {
         int blackScore = countStones(CellState.BLACK);
         int whiteScore = countStones(CellState.WHITE);
 
-        if (blackScore > whiteScore) winnerText = "KAZANAN: SIYAH!";
-        else if (whiteScore > blackScore) winnerText = "KAZANAN: BEYAZ!";
-        else winnerText = "BERABERE!";
+        if (blackScore > whiteScore) winnerText = "WINNER: BLACK!";
+        else if (whiteScore > blackScore) winnerText = "WINNER: WHITE!";
+        else winnerText = "DRAW!";
     }
 
-    private void resetGame() {
-        board.reset(); // Tahtayı temizle
-        currentPlayer = CellState.BLACK; // Siyah başlar
-        isGameOver = false; // Oyun bitmedi durumuna getir
-    }
-
-    // Tahtada hiç boş yer kaldı mı kontrolü
     private boolean isBoardFull() {
         for(int r=0; r<8; r++) {
             for(int c=0; c<8; c++) {
@@ -299,8 +302,14 @@ public class GameScreen extends ScreenAdapter {
     }
 
     @Override
-    public void resize(int width, int height) { viewport.update(width, height); }
+    public void resize(int width, int height) {
+        viewport.update(width, height);
+    }
 
     @Override
-    public void dispose() { shapeRenderer.dispose(); batch.dispose(); font.dispose(); }
+    public void dispose() {
+        shapeRenderer.dispose();
+        batch.dispose();
+        font.dispose();
+    }
 }

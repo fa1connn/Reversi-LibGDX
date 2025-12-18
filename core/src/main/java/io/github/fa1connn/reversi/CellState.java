@@ -1,17 +1,12 @@
 package io.github.fa1connn.reversi;
 
-/**
- * Reversi oyunundaki bir hücrenin olası durumlarını temsil eder.
- */
+//Possible conditions for cells
 public enum CellState {
-    EMPTY,  // Hücre boş
-    BLACK,  // Hücrede Siyah taş var
-    WHITE;  // Hücrede Beyaz taş var
+    EMPTY,
+    BLACK,
+    WHITE;
 
-    /**
-     * Bu rengin tam tersini (rakibi) döndürür.
-     * Siyahsa -> Beyaz, Beyazsa -> Siyah döner.
-     */
+    //Change to opponent version
     public CellState getOpponent() {
         if (this == BLACK) {
             return WHITE;
@@ -19,6 +14,6 @@ public enum CellState {
         if (this == WHITE) {
             return BLACK;
         }
-        return EMPTY; // Boşun rakibi yoktur
+        return EMPTY;
     }
 }
